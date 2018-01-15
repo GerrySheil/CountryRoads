@@ -2,6 +2,7 @@ package com.example.gerry.fypv001;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
@@ -9,6 +10,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Handler;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     LocationRequest locationRequest;
     IMapController mapController;
     static public final int REQUEST_LOCATION = 1;
+    //private static int splashTimeOut = 4000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,8 +85,8 @@ public class MainActivity extends AppCompatActivity {
         map.setMultiTouchControls(true);
         mapController = map.getController();
         mapController.setZoom(9);
-        GeoPoint startPoint = new GeoPoint(53.8550014, -9.28792569999996);
-        mapController.setCenter(startPoint);
+        /*GeoPoint startPoint = new GeoPoint(53.8550014, -9.28792569999996);
+        //mapController.setCenter(startPoint);
         mapController.setZoom(20);
 
         Marker startMarker = new Marker(map);
@@ -127,20 +130,7 @@ public class MainActivity extends AppCompatActivity {
             nodeMarker.setSubDescription(Road.getLengthDurationText(this, node.mLength, node.mDuration));
 
         }
-        /*GpsMyLocationProvider provider = new GpsMyLocationProvider(this);
-        provider.addLocationSource(LocationManager.NETWORK_PROVIDER);
-        locationOverlay = new MyLocationNewOverlay(provider, map);
-        locationOverlay.enableFollowLocation();
-        locationOverlay.runOnFirstFix(new Runnable() {
-            public void run() {
-                Log.d("MyTag", String.format("First location fix: %s", locationOverlay.getLastFix()));
-                mapController.animateTo(locationOverlay.getMyLocation());
-            }
-        });
-
-        map.getOverlayManager().add(locationOverlay);
-        //initMyLocationNewOverlay();
-        //Marker currentLocMarker = new Marker(map);*/
+        */
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED) {
             // Check Permissions Now
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
@@ -163,7 +153,11 @@ public class MainActivity extends AppCompatActivity {
         myLocation.enableFollowLocation();
         map.getOverlays().add(myLocation);
 
+
+
         map.invalidate();
+
+
     }
 
 
