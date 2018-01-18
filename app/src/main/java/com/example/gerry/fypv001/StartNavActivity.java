@@ -29,8 +29,6 @@ public class StartNavActivity extends AppCompatActivity {
         setContentView(R.layout.activity_start_nav);
 
         place = (EditText)findViewById(R.id.editText);
-        showLat = (TextView)findViewById(R.id.textViewLat);
-        showLong = (TextView)findViewById(R.id.textViewLong);
         go = (Button)findViewById(R.id.button2);
         //String address = place.getText().toString();
         go.setOnClickListener(new View.OnClickListener() {
@@ -40,10 +38,6 @@ public class StartNavActivity extends AppCompatActivity {
                 String address = place.getText().toString();
                 thisDestination = getLocationFromAddress(address);
                 myGeoPoint.setData(thisDestination);
-                String lat = Double.toString(myGeoPoint.getData().getLatitude());
-                String longitude = Double.toString(myGeoPoint.getData().getLongitude());
-                showLat.setText(lat);
-                showLong.setText(longitude);
                 Intent i = new Intent(StartNavActivity.this, MainActivity.class);
                 startActivity(i);
             }

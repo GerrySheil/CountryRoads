@@ -142,16 +142,49 @@ public class MainActivity extends AppCompatActivity {
             location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);// <-- Start Beemray here
 
             }
-        //double latitude = location.getLatitude();
-        //double longitude = location.getLongitude();
-        //GeoPoint p = new GeoPoint( (latitude ),  (longitude ));
-        mapController.animateTo(currentLocation);
-        mapController.setCenter(currentLocation);
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+        GeoPoint p = new GeoPoint( (latitude ),  (longitude ));
+        mapController.animateTo(p);
+        mapController.setCenter(p);
 
         MyLocationNewOverlay myLocation = new MyLocationNewOverlay(new GpsMyLocationProvider(getApplicationContext()), map);
         myLocation.enableMyLocation();
         myLocation.enableFollowLocation();
         map.getOverlays().add(myLocation);
+        GeoPoint dest = myGeoPoint.getData();
+        double lat = dest.getLatitude()/1E6;
+        double longit = dest.getLongitude()/1E6;
+        GeoPoint cheat = new GeoPoint(lat, longit);
+
+        Log.d("Destination", "Latitude: " + lat);
+        Log.d("Destination", "Longitude: " + longit);
+
+        ArrayList<GeoPoint> waypoints = new ArrayList<GeoPoint>();
+        waypoints.add(cheat);
+        waypoints.add(p);
+
+        RoadManager roadManager = new MapQuestRoadManager("5w5XI6GaRRuA1P2frfyH4DmDjXnAfEaW");
+
+        Road road = roadManager.getRoad(waypoints);
+
+        Polyline roadOverlay = roadManager.buildRoadOverlay(road);
+
+        map.getOverlays().add(roadOverlay);
+
+
+        Drawable nodeIcon = getResources().getDrawable(R.drawable.marker_node);
+        for (int i = 0; i < road.mNodes.size(); i++) {
+            RoadNode node = road.mNodes.get(i);
+            Marker nodeMarker = new Marker(map);
+            nodeMarker.setPosition(node.mLocation);
+            nodeMarker.setIcon(nodeIcon);
+            nodeMarker.setTitle("Step " + i);
+            map.getOverlays().add(nodeMarker);
+            nodeMarker.setSnippet(node.mInstructions);
+            nodeMarker.setSubDescription(Road.getLengthDurationText(this, node.mLength, node.mDuration));
+
+        }
 
 
 
