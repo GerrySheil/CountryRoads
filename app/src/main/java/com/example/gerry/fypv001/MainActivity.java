@@ -13,6 +13,7 @@ import android.location.LocationManager;
 import android.os.Handler;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,11 +28,14 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.routing.MapQuestRoadManager;
 import org.osmdroid.bonuspack.routing.OSRMRoadManager;
 import org.osmdroid.bonuspack.routing.Road;
+import org.osmdroid.bonuspack.routing.RoadLeg;
 import org.osmdroid.bonuspack.routing.RoadManager;
 import org.osmdroid.bonuspack.routing.RoadNode;
 import org.osmdroid.config.Configuration;
@@ -48,30 +52,41 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
+import java.util.Map;
 
 import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity {
 
     MapView map;
-    MyLocationNewOverlay locationOverlay;
+    RoadNode node;
+    List<RoadNode> nodes;
     GeoPoint currentLocation;
     Location location;
+    GeoPoint currentNode;
+    GeoPoint nextNode;
+    float nextNodeDistance;
+    float currentNodeDistance;
     LocationListener locationListener;
     LocationManager locationManager;
     LocationRequest locationRequest;
     IMapController mapController;
     static public final int REQUEST_LOCATION = 1;
-    //private static int splashTimeOut = 4000;
+    DatabaseReference databaseUsers;
+    String id;
+    int count = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
-
-
         super.onCreate(savedInstanceState);
         Context ctx = getApplicationContext();
         Configuration.getInstance().setUserAgentValue(BuildConfig.APPLICATION_ID);
@@ -79,58 +94,15 @@ public class MainActivity extends AppCompatActivity {
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
 
+        databaseUsers = FirebaseDatabase.getInstance().getReference("users");
+
         map = (MapView) findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setBuiltInZoomControls(true);
         map.setMultiTouchControls(true);
         mapController = map.getController();
-        mapController.setZoom(9);
-        /*GeoPoint startPoint = new GeoPoint(53.8550014, -9.28792569999996);
-        //mapController.setCenter(startPoint);
-        mapController.setZoom(20);
+        mapController.setZoom(15);
 
-        Marker startMarker = new Marker(map);
-        startMarker.setPosition(startPoint);
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        map.getOverlays().add(startMarker);
-
-        //startMarker.setIcon(getResources().getDrawable(R.drawable.ic_launcher));
-        startMarker.setTitle("Start point");
-
-        RoadManager roadManager = new MapQuestRoadManager("5w5XI6GaRRuA1P2frfyH4DmDjXnAfEaW");
-
-        ArrayList<GeoPoint> waypoints = new ArrayList<GeoPoint>();
-        waypoints.add(startPoint);
-        GeoPoint endPoint = new GeoPoint(53.802131, -9.514347);
-        waypoints.add(endPoint);
-        //Marker endMarker = new Marker(map);
-        //endMarker.setPosition(endPoint);
-        //endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        //map.getOverlays().add(endMarker);
-        //endMarker.setTitle("End Point");
-
-        //roadManager.addRequestOption("routeType=bicycle");
-
-        Road road = roadManager.getRoad(waypoints);
-
-        Polyline roadOverlay = roadManager.buildRoadOverlay(road);
-
-        map.getOverlays().add(roadOverlay);
-
-
-        Drawable nodeIcon = getResources().getDrawable(R.drawable.marker_node);
-        for (int i = 0; i < road.mNodes.size(); i++) {
-            RoadNode node = road.mNodes.get(i);
-            Marker nodeMarker = new Marker(map);
-            nodeMarker.setPosition(node.mLocation);
-            nodeMarker.setIcon(nodeIcon);
-            nodeMarker.setTitle("Step " + i);
-            map.getOverlays().add(nodeMarker);
-            nodeMarker.setSnippet(node.mInstructions);
-            nodeMarker.setSubDescription(Road.getLengthDurationText(this, node.mLength, node.mDuration));
-
-        }
-        */
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED) {
             // Check Permissions Now
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
@@ -139,12 +111,12 @@ public class MainActivity extends AppCompatActivity {
             locationListener = new MyLocationListener();
             locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);// <-- Start Beemray here
+            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
             }
-        double latitude = location.getLatitude();
-        double longitude = location.getLongitude();
-        GeoPoint p = new GeoPoint( (latitude ),  (longitude ));
+        double ulatitude = location.getLatitude();
+        double ulongitude = location.getLongitude();
+        GeoPoint p = new GeoPoint( (ulatitude ),  (ulongitude ));
         mapController.animateTo(p);
         mapController.setCenter(p);
 
@@ -161,8 +133,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Destination", "Longitude: " + longit);
 
         ArrayList<GeoPoint> waypoints = new ArrayList<GeoPoint>();
-        waypoints.add(cheat);
         waypoints.add(p);
+        waypoints.add(cheat);
+
 
         RoadManager roadManager = new MapQuestRoadManager("5w5XI6GaRRuA1P2frfyH4DmDjXnAfEaW");
 
@@ -172,10 +145,12 @@ public class MainActivity extends AppCompatActivity {
 
         map.getOverlays().add(roadOverlay);
 
+        nodes = new ArrayList<RoadNode>();
 
         Drawable nodeIcon = getResources().getDrawable(R.drawable.marker_node);
         for (int i = 0; i < road.mNodes.size(); i++) {
-            RoadNode node = road.mNodes.get(i);
+            node = road.mNodes.get(i);
+            nodes.add(node);
             Marker nodeMarker = new Marker(map);
             nodeMarker.setPosition(node.mLocation);
             nodeMarker.setIcon(nodeIcon);
@@ -185,8 +160,13 @@ public class MainActivity extends AppCompatActivity {
             nodeMarker.setSubDescription(Road.getLengthDurationText(this, node.mLength, node.mDuration));
 
         }
+        currentNode = nodes.get(0).mLocation;
+        nextNode = nodes.get(1).mLocation;
 
+        double nlatitude = currentNode.getLatitude();
+        double nlongitude = currentNode.getLongitude();
 
+        addUserData(ulatitude, ulongitude, nlatitude, nlongitude);
 
         map.invalidate();
 
@@ -204,9 +184,21 @@ public class MainActivity extends AppCompatActivity {
 
         public void onLocationChanged(Location location) {
             currentLocation = new GeoPoint(location);
-            /*double latitude = location.getLatitude();
+            double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-            double altitude = location.getAltitude();
+            double nNodeLatitude = nextNode.getLatitude();
+            double nNodeLongitude = nextNode.getLongitude();
+            double cNodeLatitude = currentNode.getLatitude();
+            double cNodeLongitude = currentNode.getLongitude();
+            //if (count == 10) {
+                updateUserData(latitude, longitude);
+                nextNodeDistance = getDistanceFromNode(nNodeLatitude, nNodeLongitude, currentLocation);
+                currentNodeDistance = getDistanceFromNode(cNodeLatitude, cNodeLongitude, currentLocation);
+                Log.d("nNodeDistance", Float.toString(nextNodeDistance));
+                Log.d("cNodeDistance", Float.toString(currentNodeDistance));
+            //}
+            //count++;
+            /*double altitude = location.getAltitude();
             double accuracy = location.getAccuracy();
 
             GeoPoint p = new GeoPoint( (latitude ),  (longitude ));
@@ -243,6 +235,34 @@ public class MainActivity extends AppCompatActivity {
             }
     }
 
+    public void addUserData(double ulatitude, double ulongitude, double nlatitude, double nlongitude)
+    {
+        id = databaseUsers.push().getKey();
+        UserData newUser = new UserData(id, ulatitude, ulongitude, nlatitude, nlongitude);
+
+        databaseUsers.child(id).setValue(newUser);
+
+    }
+
+    public void updateUserData(double updatedULat, double updatedULon)
+    {
+        Map<String, Object> userUpdates = new HashMap<>();
+        userUpdates.put(id + "/ulatitude", updatedULat);
+        userUpdates.put(id + "/ulongitude", updatedULon);
+
+
+        databaseUsers.updateChildren(userUpdates);
+
+
+    }
+
+    public float getDistanceFromNode(double nodeLatitude, double nodeLongitude, GeoPoint currentLocation){
+        float dist = 0;
+        float[] results = new float[1];
+        Location.distanceBetween(nodeLatitude, nodeLongitude, currentLocation.getLatitude(), currentLocation.getLongitude(), results);
+        dist = results[0];
+        return dist;
+    }
 
 
 }
