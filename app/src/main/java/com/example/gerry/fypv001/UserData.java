@@ -7,60 +7,81 @@ package com.example.gerry.fypv001;
 public class UserData {
 
     private String userID;
-    private double ulatitude;
-    private double ulongitude;
-    private double nlatitude;
-    private double nlongitude;
+    private double cNlatitude;
+    private double cNlongitude;
+    private double nNlatitude;
+    private double nNlongitude;
+    private float nNDist;
+    private float cNDist;
 
-    public UserData(){
+    public UserData() {
 
     }
 
-    public UserData(String userID, double ulatitude, double ulongitude, double nlatitude, double nlongitude){
+    public UserData(String userID, double ulatitude, double ulongitude, double nlatitude, double nlongitude, float nNDist, float cNDist) {
         this.userID = userID;
-        this.ulatitude = ulatitude;
-        this.ulongitude = ulongitude;
-        this.nlatitude = nlatitude;
-        this.nlongitude = nlongitude;
+        this.cNlatitude = ulatitude;
+        this.cNlongitude = ulongitude;
+        this.nNlatitude = nlatitude;
+        this.nNlongitude = nlongitude;
+        this.cNDist = cNDist;
+        this.nNDist = nNDist;
+
     }
 
     public String getUserID() {
         return userID;
     }
 
-    public double getULatitude() {
-        return ulatitude;
-    }
-
-    public double getULongitude() {
-        return ulongitude;
-    }
-
     public void setUserID(String userID) {
         this.userID = userID;
     }
 
-    public void setULatitude(double latitude) {
-        this.ulatitude = latitude;
+    public double getcNlatitude() {
+        return cNlatitude;
     }
 
-    public void setULongitude(double longitude) {
-        this.ulongitude = longitude;
+    public void setcNlatitude(double cNlatitude) {
+        this.cNlatitude = cNlatitude;
     }
 
-    public double getNlatitude() {
-        return nlatitude;
+    public double getcNlongitude() {
+        return cNlongitude;
     }
 
-    public double getNlongitude() {
-        return nlongitude;
+    public void setcNlongitude(double cNlongitude) {
+        this.cNlongitude = cNlongitude;
     }
 
-    public void setNlatitude(double nlatitude) {
-        this.nlatitude = nlatitude;
+    public double getnNlatitude() {
+        return nNlatitude;
     }
 
-    public void setNlongitude(double nlongitude) {
-        this.nlongitude = nlongitude;
+    public void setnNlatitude(double nNlatitude) {
+        this.nNlatitude = nNlatitude;
+    }
+
+    public double getnNlongitude() {
+        return nNlongitude;
+    }
+
+    public void setnNlongitude(double nNlongitude) {
+        this.nNlongitude = nNlongitude;
+    }
+
+    public float getnNDist() {
+        return nNDist;
+    }
+
+    public void setnNDist(float nNDist) {
+        this.nNDist = nNDist;
+    }
+
+    public float getcNDist() {
+        return cNDist;
+    }
+
+    public void setcNDist(float cNDist) {
+        this.cNDist = cNDist;
     }
 }

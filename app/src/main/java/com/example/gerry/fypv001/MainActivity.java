@@ -163,10 +163,14 @@ public class MainActivity extends AppCompatActivity {
         currentNode = nodes.get(0).mLocation;
         nextNode = nodes.get(1).mLocation;
 
-        double nlatitude = currentNode.getLatitude();
-        double nlongitude = currentNode.getLongitude();
+        double cNLatitude = currentNode.getLatitude();
+        double cNLongitude = currentNode.getLongitude();
+        double nNLatitude = nextNode.getLatitude();
+        double nNLongitude = nextNode.getLongitude();
+        nextNodeDistance = getDistanceFromNode(nNLatitude, nNLongitude, p);
+        currentNodeDistance = getDistanceFromNode(cNLatitude, cNLongitude, p);
 
-        addUserData(ulatitude, ulongitude, nlatitude, nlongitude);
+        addUserData(cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
 
         map.invalidate();
 
@@ -191,11 +195,11 @@ public class MainActivity extends AppCompatActivity {
             double cNodeLatitude = currentNode.getLatitude();
             double cNodeLongitude = currentNode.getLongitude();
             //if (count == 10) {
-                updateUserData(latitude, longitude);
                 nextNodeDistance = getDistanceFromNode(nNodeLatitude, nNodeLongitude, currentLocation);
                 currentNodeDistance = getDistanceFromNode(cNodeLatitude, cNodeLongitude, currentLocation);
                 Log.d("nNodeDistance", Float.toString(nextNodeDistance));
                 Log.d("cNodeDistance", Float.toString(currentNodeDistance));
+            updateUserData(nNodeLatitude, nNodeLongitude, cNodeLatitude, cNodeLongitude, nextNodeDistance, currentNodeDistance);
             //}
             //count++;
             /*double altitude = location.getAltitude();
@@ -235,20 +239,24 @@ public class MainActivity extends AppCompatActivity {
             }
     }
 
-    public void addUserData(double ulatitude, double ulongitude, double nlatitude, double nlongitude)
+    public void addUserData(double nNodelatitude, double nNodelongitude, double cNodelatitude, double cNodelongitude, float nextNodeDistance, float currentNodeDistance)
     {
         id = databaseUsers.push().getKey();
-        UserData newUser = new UserData(id, ulatitude, ulongitude, nlatitude, nlongitude);
+        UserData newUser = new UserData(id, nNodelatitude, nNodelongitude, cNodelatitude, cNodelongitude, nextNodeDistance, currentNodeDistance);
 
         databaseUsers.child(id).setValue(newUser);
 
     }
 
-    public void updateUserData(double updatedULat, double updatedULon)
+    public void updateUserData(double updatedNNodeLat, double updatedNNodeLong, double updatedCNodeLat, double updatedCNodeLong, float updatedNNodeDist, float updatedCNodeDist)
     {
         Map<String, Object> userUpdates = new HashMap<>();
-        userUpdates.put(id + "/ulatitude", updatedULat);
-        userUpdates.put(id + "/ulongitude", updatedULon);
+        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
+        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
+        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
+        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
+        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
+        userUpdates.put(id + "/currentNodeDistance", updatedCNodeDist);
 
 
         databaseUsers.updateChildren(userUpdates);
