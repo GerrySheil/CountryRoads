@@ -26,7 +26,6 @@
         android:allowBackup="true"
         android:icon="@drawable/splash_icon"
         android:label="Country Roads"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
