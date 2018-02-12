@@ -30,6 +30,8 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.routing.MapQuestRoadManager;
@@ -60,6 +62,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import static java.security.AccessController.getContext;
 
@@ -80,8 +83,12 @@ public class MainActivity extends AppCompatActivity {
     IMapController mapController;
     static public final int REQUEST_LOCATION = 1;
     DatabaseReference databaseUsers;
+    FirebaseFirestore db;
+    DocumentReference userRef;
     String id;
+    String uniqueID;
     int count = 0;
+    int idFS = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +102,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         databaseUsers = FirebaseDatabase.getInstance().getReference("users");
+        db = FirebaseFirestore.getInstance();
+        uniqueID = UUID.randomUUID().toString();
 
         map = (MapView) findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
@@ -171,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
         currentNodeDistance = getDistanceFromNode(cNLatitude, cNLongitude, p);
 
         addUserData(cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
-
+        addUserDataFS(uniqueID, cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
         map.invalidate();
 
 
@@ -247,6 +256,27 @@ public class MainActivity extends AppCompatActivity {
         databaseUsers.child(id).setValue(newUser);
 
     }
+
+    public void addUserDataFS(String uuid, double nNodelatitude, double nNodelongitude, double cNodelatitude, double cNodelongitude, float nextNodeDistance, float currentNodeDistance)
+    {
+        UserDataFS newUser = new UserDataFS(nNodelatitude, nNodelongitude, cNodelatitude, cNodelongitude, nextNodeDistance, currentNodeDistance);
+        db.collection("users").document(uuid).set(newUser);
+        userRef = db.collection("users").document("uuid");
+    }
+
+
+    public void updateUserDataFS(double updatedNNodeLat, double updatedNNodeLong, double updatedCNodeLat, double updatedCNodeLong, float updatedNNodeDist, float updatedCNodeDist) {
+        Map<String, Object> userUpdates = new HashMap<>();
+        userUpdates.put("/cNDist", updatedCNodeDist);
+        userUpdates.put("/cNlatitude", updatedCNodeLat);
+        userUpdates.put("/cNlongitude", updatedCNodeLong);
+        userUpdates.put("/nNDist", updatedNNodeDist);
+        userUpdates.put("/nNlatitude", updatedNNodeLat);
+        userUpdates.put("/nNlongitude", updatedNNodeLong);
+        userRef.update(userUpdates);
+    }
+
+
 
     public void updateUserData(double updatedNNodeLat, double updatedNNodeLong, double updatedCNodeLat, double updatedCNodeLong, float updatedNNodeDist, float updatedCNodeDist)
     {
