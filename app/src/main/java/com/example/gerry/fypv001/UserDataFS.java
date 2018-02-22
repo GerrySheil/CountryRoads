@@ -12,19 +12,20 @@ public class UserDataFS {
     private double nNlongitude;
     private float nNDist;
     private float cNDist;
+    private String token;
 
     public UserDataFS() {
 
     }
 
-    public UserDataFS(double ulatitude, double ulongitude, double nlatitude, double nlongitude, float nNDist, float cNDist) {
+    public UserDataFS(double ulatitude, double ulongitude, double nlatitude, double nlongitude, float nNDist, float cNDist, String token) {
         this.cNlatitude = ulatitude;
         this.cNlongitude = ulongitude;
         this.nNlatitude = nlatitude;
         this.nNlongitude = nlongitude;
         this.cNDist = cNDist;
         this.nNDist = nNDist;
-
+        this.token = token;
     }
 
     public double getcNlatitude() {
@@ -73,6 +74,14 @@ public class UserDataFS {
 
     public void setcNDist(float cNDist) {
         this.cNDist = cNDist;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }
 

@@ -24,6 +24,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.PendingResult;
@@ -31,6 +33,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
@@ -94,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
     int count = 0;
     int idFS = 1;
     String token;
+    Button logOut;
 
 
     @Override
@@ -106,6 +111,9 @@ public class MainActivity extends AppCompatActivity {
         //As part of the osm API useage requirements the user agent must be set to avoid being banned from the API
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
+        logOut = (Button)findViewById(R.id.logOutButton);
+        //RelativeLayout view = new RelativeLayout(this);
+
         token = FirebaseInstanceId.getInstance().getToken();
 
         //LocalBroadcastManager.getInstance(ctx).registerReceiver(
@@ -122,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
         mapController = map.getController();
         mapController.setZoom(15);
 
+        //view.addView(map, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.FILL_PARENT,
+          //    RelativeLayout.LayoutParams.FILL_PARENT));
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED) {
             // Check Permissions Now
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
@@ -192,8 +202,15 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d("FCMToken", "This is a message" + token);
         addUserData(cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
-        addUserDataFS(uniqueID, cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
+        addUserDataFS(uniqueID, cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance, token);
         map.invalidate();
+
+        logOut.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
 
 
     }
@@ -203,6 +220,25 @@ public class MainActivity extends AppCompatActivity {
     public void onResume(){
         super.onResume();
         Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
+    }
+    @Override
+    public void onDestroy() {
+
+        super.onDestroy();
+        db.collection("users").document(uniqueID)
+                .delete()
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d("DeleteDoc", "DocumentSnapshot successfully deleted!");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("DeleteDoc", "Error deleting document", e);
+                    }
+                });
     }
 
     public class MyLocationListener implements LocationListener {
@@ -269,9 +305,9 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void addUserDataFS(String uuid, double nNodelatitude, double nNodelongitude, double cNodelatitude, double cNodelongitude, float nextNodeDistance, float currentNodeDistance)
+    public void addUserDataFS(String uuid, double nNodelatitude, double nNodelongitude, double cNodelatitude, double cNodelongitude, float nextNodeDistance, float currentNodeDistance, String token)
     {
-        UserDataFS newUser = new UserDataFS(nNodelatitude, nNodelongitude, cNodelatitude, cNodelongitude, nextNodeDistance, currentNodeDistance);
+        UserDataFS newUser = new UserDataFS(nNodelatitude, nNodelongitude, cNodelatitude, cNodelongitude, nextNodeDistance, currentNodeDistance, token);
         db.collection("users").document(uuid).set(newUser);
         userRef = db.collection("users").document("uuid");
     }
