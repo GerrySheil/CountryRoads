@@ -1,8 +1,10 @@
 package com.example.gerry.fypv001;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
@@ -15,6 +17,7 @@ import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -32,6 +35,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.routing.MapQuestRoadManager;
@@ -89,6 +93,8 @@ public class MainActivity extends AppCompatActivity {
     String uniqueID;
     int count = 0;
     int idFS = 1;
+    String token;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +106,10 @@ public class MainActivity extends AppCompatActivity {
         //As part of the osm API useage requirements the user agent must be set to avoid being banned from the API
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
+        token = FirebaseInstanceId.getInstance().getToken();
+
+        //LocalBroadcastManager.getInstance(ctx).registerReceiver(
+               // mMessageReceiver, new IntentFilter("GetToken"));
 
         databaseUsers = FirebaseDatabase.getInstance().getReference("users");
         db = FirebaseFirestore.getInstance();
@@ -179,6 +189,8 @@ public class MainActivity extends AppCompatActivity {
         nextNodeDistance = getDistanceFromNode(nNLatitude, nNLongitude, p);
         currentNodeDistance = getDistanceFromNode(cNLatitude, cNLongitude, p);
 
+
+        Log.d("FCMToken", "This is a message" + token);
         addUserData(cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
         addUserDataFS(uniqueID, cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
         map.invalidate();
@@ -301,6 +313,15 @@ public class MainActivity extends AppCompatActivity {
         dist = results[0];
         return dist;
     }
+
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            token = intent.getStringExtra("GetToken");
+            // Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        }
+    };
 
 
 }

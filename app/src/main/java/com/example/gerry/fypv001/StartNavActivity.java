@@ -1,11 +1,15 @@
 package com.example.gerry.fypv001;
 
+import android.*;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Parcelable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,6 +19,8 @@ import org.osmdroid.util.GeoPoint;
 
 import java.io.IOException;
 import java.util.List;
+
+import static com.example.gerry.fypv001.MainActivity.REQUEST_LOCATION;
 
 public class StartNavActivity extends AppCompatActivity {
     EditText place;
@@ -27,6 +33,7 @@ public class StartNavActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start_nav);
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
 
         place = (EditText)findViewById(R.id.editText);
         go = (Button)findViewById(R.id.button2);
@@ -76,5 +83,15 @@ public class StartNavActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return p1;
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_LOCATION) {
+            if(grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("Location", "Permissions Granted");
+            } else {
+                Log.d("Location", "Permissions Denied");// Permission was denied or request was cancelled
+            }
+        }
     }
 }
