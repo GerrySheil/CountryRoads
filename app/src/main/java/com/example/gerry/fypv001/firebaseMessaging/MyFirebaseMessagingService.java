@@ -1,12 +1,17 @@
 package com.example.gerry.fypv001.firebaseMessaging;
 
+import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.example.gerry.fypv001.MainActivity;
 import com.example.gerry.fypv001.R;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -20,15 +25,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private String body;
     private int notificationId;
     private NotificationManager notificationManager;
+    private SharedPreferences prefs;
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-
-        // TODO(developer): Handle FCM messages here.
-        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
-        Log.d("FirebaseMessaging:", "From: " + remoteMessage.getFrom());
-        Log.d("FirebaseMessaging:", "Message data payload: " + remoteMessage.getNotification().getBody());
-        Log.d("FirebaseMessaging:", "Message Title: " + remoteMessage.getNotification().getTitle());
+        prefs = getSharedPreferences(Activity.class.getSimpleName(), Context.MODE_PRIVATE);
+        notificationId = prefs.getInt("notificationNumber", 0);
         title = remoteMessage.getNotification().getTitle();
         body = remoteMessage.getNotification().getBody();
         Context con = getApplicationContext();
@@ -38,7 +40,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         displayNotification(title, body);
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-            Log.d("FirebaseMessaging:", "Message data payload: " + remoteMessage.getData());
 /*
             if (/* Check if data needs to be processed by long running job  true) {
                 // For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
@@ -46,13 +47,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             } else {
                 // Handle message within 10 seconds
                 handleNow();
-            }
 
-        }
+            }
+                  }
 */
             // Check if message contains a notification payload.
             if (remoteMessage.getNotification() != null) {
-                Log.d("FirebaseMessaging:", "Message Notification Body: " + remoteMessage.getNotification().getBody());
             }
 
             // Also if you intend on generating your own notifications as a result of a received FCM
@@ -61,15 +61,23 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     public void displayNotification(String title, String body){
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+        PendingIntent pendingIntent = PendingIntent.getActivities(this, 0, new Intent[]{intent}, PendingIntent.FLAG_ONE_SHOT);
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, "default")
                 .setSmallIcon(R.drawable.splash_icon)
                 .setContentTitle(title)
                 .setContentText(body)
                 //.setStyle(new NotificationCompat.BigTextStyle()
                         //.bigText("Much longer text that cannot fit one line..."))
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        notificationId = ((int) Math.random());
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setFullScreenIntent(pendingIntent, true);
+        notificationId = ((int) Math.random()*10);
         notificationManager.notify(notificationId, mBuilder.build());
+        SharedPreferences.Editor editor = prefs.edit();
+        notificationId++;
+        editor.putInt("notificationNumber", notificationId);
+        editor.commit();
     }
 
     public void initChannels(Context context) {
@@ -80,7 +88,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationChannel channel = new NotificationChannel("default",
                 "Channel name",
-                NotificationManager.IMPORTANCE_DEFAULT);
+                NotificationManager.IMPORTANCE_HIGH);
         channel.setDescription("Channel description");
         notificationManager.createNotificationChannel(channel);
     }

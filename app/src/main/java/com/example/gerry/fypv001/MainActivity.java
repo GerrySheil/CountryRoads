@@ -97,8 +97,14 @@ public class MainActivity extends AppCompatActivity {
     String uniqueID;
     int count = 0;
     int idFS = 1;
+    int x = 0;
+    int y = 1;
     String token;
     Button logOut;
+    double nNodeLatitude;
+    double nNodeLongitude;
+    double cNodeLatitude;
+    double cNodeLongitude;
 
 
     @Override
@@ -112,12 +118,11 @@ public class MainActivity extends AppCompatActivity {
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
         logOut = (Button)findViewById(R.id.logOutButton);
-        //RelativeLayout view = new RelativeLayout(this);
+        
 
         token = FirebaseInstanceId.getInstance().getToken();
 
-        //LocalBroadcastManager.getInstance(ctx).registerReceiver(
-               // mMessageReceiver, new IntentFilter("GetToken"));
+
 
         databaseUsers = FirebaseDatabase.getInstance().getReference("users");
         db = FirebaseFirestore.getInstance();
@@ -130,8 +135,6 @@ public class MainActivity extends AppCompatActivity {
         mapController = map.getController();
         mapController.setZoom(15);
 
-        //view.addView(map, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.FILL_PARENT,
-          //    RelativeLayout.LayoutParams.FILL_PARENT));
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED) {
             // Check Permissions Now
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
@@ -189,8 +192,10 @@ public class MainActivity extends AppCompatActivity {
             nodeMarker.setSubDescription(Road.getLengthDurationText(this, node.mLength, node.mDuration));
 
         }
-        currentNode = nodes.get(0).mLocation;
-        nextNode = nodes.get(1).mLocation;
+        currentNode = nodes.get(x).mLocation;
+        nextNode = nodes.get(y).mLocation;
+
+
 
         double cNLatitude = currentNode.getLatitude();
         double cNLongitude = currentNode.getLongitude();
@@ -201,7 +206,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         Log.d("FCMToken", "This is a message" + token);
-        addUserData(cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance);
         addUserDataFS(uniqueID, cNLatitude, cNLongitude, nNLatitude, nNLongitude, nextNodeDistance, currentNodeDistance, token);
         map.invalidate();
 
@@ -245,33 +249,30 @@ public class MainActivity extends AppCompatActivity {
 
         public void onLocationChanged(Location location) {
             currentLocation = new GeoPoint(location);
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
-            double nNodeLatitude = nextNode.getLatitude();
-            double nNodeLongitude = nextNode.getLongitude();
-            double cNodeLatitude = currentNode.getLatitude();
-            double cNodeLongitude = currentNode.getLongitude();
-            //if (count == 10) {
+            nNodeLatitude = nextNode.getLatitude();
+            nNodeLongitude = nextNode.getLongitude();
+            cNodeLatitude = currentNode.getLatitude();
+            cNodeLongitude = currentNode.getLongitude();
+
                 nextNodeDistance = getDistanceFromNode(nNodeLatitude, nNodeLongitude, currentLocation);
                 currentNodeDistance = getDistanceFromNode(cNodeLatitude, cNodeLongitude, currentLocation);
+                if (nextNodeDistance <= 10.0)
+                {
+                    x++;
+                    y++;
+                    currentNode = nodes.get(x).mLocation;
+                    nextNode = nodes.get(y).mLocation;
+                    nNodeLatitude = nextNode.getLatitude();
+                    nNodeLongitude = nextNode.getLongitude();
+                    cNodeLatitude = currentNode.getLatitude();
+                    cNodeLongitude = currentNode.getLongitude();
+                    nextNodeDistance = getDistanceFromNode(nNodeLatitude, nNodeLongitude, currentLocation);
+                    currentNodeDistance = getDistanceFromNode(cNodeLatitude, cNodeLongitude, currentLocation);
+                }
                 Log.d("nNodeDistance", Float.toString(nextNodeDistance));
                 Log.d("cNodeDistance", Float.toString(currentNodeDistance));
-            updateUserData(nNodeLatitude, nNodeLongitude, cNodeLatitude, cNodeLongitude, nextNodeDistance, currentNodeDistance);
-            //}
-            //count++;
-            /*double altitude = location.getAltitude();
-            double accuracy = location.getAccuracy();
+            updateUserDataFS(uniqueID, nNodeLatitude, nNodeLongitude, cNodeLatitude, cNodeLongitude, nextNodeDistance, currentNodeDistance);
 
-            GeoPoint p = new GeoPoint( (latitude ),  (longitude ));
-
-            mapController.animateTo(p);
-            mapController.setCenter(p);
-
-            MyLocationNewOverlay mylocation = new MyLocationNewOverlay(new GpsMyLocationProvider(getApplicationContext()), map);
-
-            mylocation.enableMyLocation();
-            mylocation.enableFollowLocation();
-            map.getOverlays().add(mylocation);*/
         }
 
         public void onProviderDisabled(String provider) {
@@ -296,15 +297,6 @@ public class MainActivity extends AppCompatActivity {
             }
     }
 
-    public void addUserData(double nNodelatitude, double nNodelongitude, double cNodelatitude, double cNodelongitude, float nextNodeDistance, float currentNodeDistance)
-    {
-        id = databaseUsers.push().getKey();
-        UserData newUser = new UserData(id, nNodelatitude, nNodelongitude, cNodelatitude, cNodelongitude, nextNodeDistance, currentNodeDistance);
-
-        databaseUsers.child(id).setValue(newUser);
-
-    }
-
     public void addUserDataFS(String uuid, double nNodelatitude, double nNodelongitude, double cNodelatitude, double cNodelongitude, float nextNodeDistance, float currentNodeDistance, String token)
     {
         UserDataFS newUser = new UserDataFS(nNodelatitude, nNodelongitude, cNodelatitude, cNodelongitude, nextNodeDistance, currentNodeDistance, token);
@@ -313,33 +305,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void updateUserDataFS(double updatedNNodeLat, double updatedNNodeLong, double updatedCNodeLat, double updatedCNodeLong, float updatedNNodeDist, float updatedCNodeDist) {
-        Map<String, Object> userUpdates = new HashMap<>();
-        userUpdates.put("/cNDist", updatedCNodeDist);
-        userUpdates.put("/cNlatitude", updatedCNodeLat);
-        userUpdates.put("/cNlongitude", updatedCNodeLong);
-        userUpdates.put("/nNDist", updatedNNodeDist);
-        userUpdates.put("/nNlatitude", updatedNNodeLat);
-        userUpdates.put("/nNlongitude", updatedNNodeLong);
-        userRef.update(userUpdates);
-    }
-
-
-
-    public void updateUserData(double updatedNNodeLat, double updatedNNodeLong, double updatedCNodeLat, double updatedCNodeLong, float updatedNNodeDist, float updatedCNodeDist)
-    {
-        Map<String, Object> userUpdates = new HashMap<>();
-        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
-        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
-        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
-        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
-        userUpdates.put(id + "/nextNodeDistance", updatedNNodeDist);
-        userUpdates.put(id + "/currentNodeDistance", updatedCNodeDist);
-
-
-        databaseUsers.updateChildren(userUpdates);
-
-
+    public void updateUserDataFS(String uuid, double updatedNNodeLat, double updatedNNodeLong, double updatedCNodeLat, double updatedCNodeLong, float updatedNNodeDist, float updatedCNodeDist) {
+        db.collection("users").document(uuid).update(
+                "cNDist", updatedCNodeDist,
+                "cNlatitude", updatedCNodeLat,
+                "cNlongitude", updatedCNodeLong,
+                "nNDist", updatedNNodeDist,
+                "nNlatitude", updatedNNodeLat,
+                "nNlongitude", updatedNNodeLong);
     }
 
     public float getDistanceFromNode(double nodeLatitude, double nodeLongitude, GeoPoint currentLocation){
@@ -353,9 +326,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // Get extra data included in the Intent
             token = intent.getStringExtra("GetToken");
-            // Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
         }
     };
 

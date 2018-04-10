@@ -88,7 +88,7 @@ public class StartNavActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == REQUEST_LOCATION) {
             if(grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("Location", "Permissions Granted");
+
             } else {
                 Log.d("Location", "Permissions Denied");// Permission was denied or request was cancelled
             }
